@@ -1,0 +1,6 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: ruslan
+  - include:
+      file: db/changelog/migrations/001-create-table.xml
