@@ -4,3 +4,14 @@ databaseChangeLog:
       author: ruslan
   - include:
       file: db/changelog/migrations/001-create-table.xml
+  - changeSet:
+      id: 2
+      author: ruslan
+  - include:
+      file: db/changelog/migrations/002-create-table-users-and-role.xml
+  - changeSet:
+      id: 3
+      author: ruslan
+  - include:
+      runAlways: true
+      file: db/changelog/migrations/R-insert-data.xml

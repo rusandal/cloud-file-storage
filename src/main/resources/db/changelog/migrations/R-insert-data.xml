@@ -1,0 +1,35 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-4.3.xsd">
+    <changeSet id="insert_data" author="ruslan">
+        <insert tableName="storage_info">
+            <column name="file_name" value="testFile.txt"/>
+            <column name="file_size" value="1"/>
+            <column name="upload_date" value="NULL"/>
+        </insert>
+        <insert tableName="storage_users">
+            <column name="login" value="myuser"/>
+            <column name="password" value="user"/>
+            <column name="number" value="2"/>
+            <column name="id_role" value="2"/>
+        </insert>
+        <insert tableName="storage_users">
+            <column name="login" value="myadmin"/>
+            <column name="password" value="admin"/>
+            <column name="number" value="1"/>
+            <column name="id_role" value="1"/>
+        </insert>
+        <insert tableName="role_table">
+            <column name="id" value="1"/>
+            <column name="role" value="admin"/>
+        </insert>
+        <insert tableName="role_table">
+            <column name="id" value="2"/>
+            <column name="role" value="user"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
