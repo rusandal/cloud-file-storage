@@ -5,10 +5,16 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import ru.minikhanov.cloud_storage.CloudStorageApplication;
 import ru.minikhanov.cloud_storage.security.services.UserDetailsImpl;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Date;
 
 @Component
@@ -47,5 +53,14 @@ public class JwtUtils {
             logger.error("JWT claims string is empty: {}", e.getMessage());
         }
         return false;
+    }
+    public void deactivateToken(String authToken){
+        try (BufferedWriter writter = new BufferedWriter(new FileWriter("badtoken.txt", true))) {
+            writter.write(authToken + "\n");
+            CloudStorageApplication.hashSetBadToken.add(authToken);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //System.out.println(Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken).getSignature());
     }
 }

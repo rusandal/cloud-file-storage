@@ -9,6 +9,7 @@
         <insert tableName="storage_info">
             <column name="file_name" value="testFile.txt"/>
             <column name="file_size" value="1"/>
+            <column name="hash" value="139732f2a9e9a63a167d3208a93042ba"/>
             <column name="upload_date" value="NULL"/>
         </insert>
         <insert tableName="role_table">

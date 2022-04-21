@@ -42,8 +42,6 @@ public class AuthService {
 
             return ResponseEntity.ok(new JwtResponse(jwt));
         } else {
-            //User user = new User(login, encoder.encode(password));
-            //Set<String> strRoles = signUpRequest.getRole();
             Set<Role> roles = new HashSet<>();
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                     .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
@@ -55,6 +53,9 @@ public class AuthService {
             String jwt = jwtUtils.generateJwtToken(authentication);
             return ResponseEntity.ok(new JwtResponse(jwt));
         }
+    }
 
+    public void deleteToken (String token){
+        jwtUtils.deactivateToken(token);
     }
 }
