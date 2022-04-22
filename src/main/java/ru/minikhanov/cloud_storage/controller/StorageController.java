@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.util.DigestUtils;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,10 +44,11 @@ public class StorageController {
     }
 
     @PostMapping("/logou")
-    public String logout(@RequestHeader("auth_token") String token){
+    @ResponseStatus(code =HttpStatus.OK)
+    public void logout(@RequestHeader("auth_token") String token){
         System.out.println("post logout");
         authService.deleteToken(token);
-        return "Ok";
+        //return "Ok";
     }
 
     @PostMapping(value = "/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -56,8 +58,10 @@ public class StorageController {
     }
 
     @DeleteMapping("/file")
-    public ResponseEntity<Object> deleteFile(){
-        return ResponseEntity.ok().body("body delete file");
+    @ResponseStatus(code = HttpStatus.OK)
+    public void deleteFile(@RequestParam("filename") String filename){
+        storageService.deleteFile(filename);
+        //return ResponseEntity.ok().body("body delete file");
     }
 
     @GetMapping("/file")
@@ -75,7 +79,7 @@ public class StorageController {
         return storageService.getAllFiles();
     }
 
-    @ExceptionHandler({IllegalArgumentException.class})
+    @ExceptionHandler({IllegalArgumentException.class, MissingServletRequestParameterException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public MessageResponse handlerIllegalArgumentException(Exception e){
         return new MessageResponse(e.getMessage());

@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
@@ -26,6 +27,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -89,7 +91,7 @@ public class StorageService {
         System.out.println("hash file " + md5Hex + ". Hash receive " + hash);
         return false;
     }
-
+    @Transactional
     public void addFile(String hash, MultipartFile multipartFile) {
         if (checkHex(hash, multipartFile)) {
             User user = userRepository.getById(getUserAuthDetails().getId());
@@ -123,6 +125,7 @@ public class StorageService {
                 sb.append(line).append(System.lineSeparator());
             }
             Resource resource = new UrlResource(file.toUri());
+            //InputStream fileInputStream = new FileInputStream(String.valueOf(file));
             Map<String, String> response = new HashMap<>();
             if (resource.exists() || resource.isReadable()) {
                 String md5Hex = DigestUtils.md5DigestAsHex(resource.getInputStream());
@@ -140,10 +143,28 @@ public class StorageService {
         }
 
     }
+    @Transactional
+    public void deleteFile(String filename) {
+        Path file = Paths.get(CloudStorageApplication.PATH + getUserAuthDetails().getUsername(), filename);
+        try {
+            boolean result = Files.deleteIfExists(file);
+            System.out.println("file exist: "+result+" file name: "+filename+" user id: "+getUserAuthDetails().getId());
+            storageRepository.deleteByFilenameAndUserid(filename, getUserAuthDetails().getId());
+            if(!result){
+                throw new StorageException("file not found");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
     public UserDetailsImpl getUserAuthDetails() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         return userDetails;
     }
+
+
 }
