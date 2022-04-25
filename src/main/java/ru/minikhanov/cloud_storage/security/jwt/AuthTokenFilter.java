@@ -19,7 +19,11 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+
 import org.springframework.util.StringUtils;
 
 public class AuthTokenFilter extends OncePerRequestFilter {
@@ -31,6 +35,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
+            //StringBuffer jb = new StringBuffer();
+            /*String line = null;
+            BufferedReader reader = request.getReader();
+            while ((line=reader.readLine())!=null){
+                System.out.println(line);
+            }*/
+            //byte[] body = request.getInputStream().readAllBytes();
+            //String content = new String(body);
+            //System.out.println(content);
             String jwt = parseJwt(request);
             if (jwt != null && !CloudStorageApplication.hashSetBadToken.contains(jwt) &&jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);

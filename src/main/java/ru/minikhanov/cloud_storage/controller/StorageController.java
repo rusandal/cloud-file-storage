@@ -48,7 +48,6 @@ public class StorageController {
     public void logout(@RequestHeader("auth_token") String token){
         System.out.println("post logout");
         authService.deleteToken(token);
-        //return "Ok";
     }
 
     @PostMapping(value = "/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -61,7 +60,6 @@ public class StorageController {
     @ResponseStatus(code = HttpStatus.OK)
     public void deleteFile(@RequestParam("filename") String filename){
         storageService.deleteFile(filename);
-        //return ResponseEntity.ok().body("body delete file");
     }
 
     @GetMapping("/file")

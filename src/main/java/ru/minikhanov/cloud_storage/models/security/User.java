@@ -26,7 +26,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @NotNull
-    @Size(max = 20)
+    @Size(max = 30)
     private String login;
     @Size(max = 120)
     private String password;
