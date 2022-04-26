@@ -35,15 +35,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
-            //StringBuffer jb = new StringBuffer();
-            /*String line = null;
-            BufferedReader reader = request.getReader();
-            while ((line=reader.readLine())!=null){
-                System.out.println(line);
-            }*/
-            //byte[] body = request.getInputStream().readAllBytes();
-            //String content = new String(body);
-            //System.out.println(content);
             String jwt = parseJwt(request);
             if (jwt != null && !CloudStorageApplication.hashSetBadToken.contains(jwt) &&jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
