@@ -29,25 +29,14 @@ import ru.minikhanov.cloud_storage.service.StorageService;
 
 import java.io.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class StorageController {
-    @Autowired
-    private StorageService storageService;
-    @Autowired
-    private AuthService authService;
+    private final StorageService storageService;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginForm loginForm){
-        System.out.println("post login");
-        return authService.getToken(loginForm.getLogin(), loginForm.getPassword());
-    }
-
-    @PostMapping("/logou")
-    @ResponseStatus(code =HttpStatus.OK)
-    public void logout(@RequestHeader("auth_token") String token){
-        System.out.println("post logout");
-        authService.deleteToken(token);
+    public StorageController(StorageService storageService) {
+        this.storageService = storageService;
     }
 
     @PostMapping(value = "/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -57,14 +46,13 @@ public class StorageController {
     }
 
     @DeleteMapping("/file")
-    @ResponseStatus(code = HttpStatus.OK)
     public void deleteFile(@RequestParam("filename") String filename){
         storageService.deleteFile(filename);
     }
 
     @GetMapping("/file")
-    public ResponseEntity<Object> getFile(@RequestParam("filename") String filename) throws IOException{
-        return ResponseEntity.ok().body(storageService.loadFileResponse(filename));
+    public Map<String, String> getFile(@RequestParam("filename") String filename) throws IOException{
+        return storageService.loadFileResponse(filename);
     }
 
     @PutMapping("/file")
@@ -101,10 +89,10 @@ public class StorageController {
         answerObject.put("message", message);
         return answerObject;
     }*/
-    @Bean(name = "multipartResolver")
+    /*@Bean(name = "multipartResolver")
     public CommonsMultipartResolver multipartResolver() {
         CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
         multipartResolver.setMaxUploadSize(100000);
         return multipartResolver;
-    }
+    }*/
 }

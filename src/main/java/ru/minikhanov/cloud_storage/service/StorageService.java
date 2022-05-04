@@ -22,6 +22,8 @@ import ru.minikhanov.cloud_storage.repository.StorageRepository;
 import ru.minikhanov.cloud_storage.repository.security.UserRepository;
 import ru.minikhanov.cloud_storage.security.services.UserDetailsImpl;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -36,26 +38,29 @@ import java.util.Map;
 
 @Service
 public class StorageService {
-    @Autowired
-    private StorageRepository storageRepository;
+    private final StorageRepository storageRepository;
+    private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
+    public StorageService(StorageRepository storageRepository, UserDetailsService userDetailsService, UserRepository userRepository) {
+        this.storageRepository = storageRepository;
+        this.userDetailsService = userDetailsService;
+        this.userRepository = userRepository;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public List<?> getFiles(String token) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Object principal = authentication.getPrincipal();
-        System.out.println(principal);
         String login = principal.toString();
         List<String> files = storageRepository.findFiles(login);
-        return new ArrayList<>();
+        return files;
     }
 
     public List<EntityFile> getAllFiles() {
-        return storageRepository.findAllFiles();
+        return storageRepository.findAll();
     }
 
     public ResponseEntity getFileInfo(String hash, MultipartFile multipartFile) {
@@ -149,7 +154,11 @@ public class StorageService {
         try {
             boolean result = Files.deleteIfExists(file);
             System.out.println("file exist: "+result+" file name: "+filename+" user id: "+getUserAuthDetails().getId());
-            storageRepository.deleteByFilenameAndUserid(filename, getUserAuthDetails().getId());
+            entityManager.createQuery("DELETE FROM EntityFile WHERE fileName= :fileName and user= :userId")
+                    .setParameter("fileName", filename)
+                    .setParameter("userId", getUserAuthDetails().getId())
+                    .executeUpdate();
+            //storageRepository.deleteByFilenameAndUserid(filename, getUserAuthDetails().getId());
             if(!result){
                 throw new StorageException("file not found");
             }
@@ -165,6 +174,4 @@ public class StorageService {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         return userDetails;
     }
-
-
 }
