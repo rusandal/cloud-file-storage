@@ -1,5 +1,7 @@
 package ru.minikhanov.cloud_storage.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileUrlResource;
 import org.springframework.core.io.Resource;
@@ -41,29 +43,32 @@ public class StorageService {
     private final StorageRepository storageRepository;
     private final UserDetailsService userDetailsService;
     private final UserRepository userRepository;
+    private final AuthService authService;
+    static final Logger log = LoggerFactory.getLogger(StorageService.class);
 
-    public StorageService(StorageRepository storageRepository, UserDetailsService userDetailsService, UserRepository userRepository) {
+    public StorageService(StorageRepository storageRepository, UserDetailsService userDetailsService, UserRepository userRepository, AuthService authService) {
         this.storageRepository = storageRepository;
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
+        this.authService = authService;
     }
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public List<?> getFiles(String token) {
+    /*public List<?> getFiles(String token) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Object principal = authentication.getPrincipal();
         String login = principal.toString();
         List<String> files = storageRepository.findFiles(login);
         return files;
-    }
+    }*/
 
     public List<EntityFile> getAllFiles() {
         return storageRepository.findAll();
     }
 
-    public ResponseEntity getFileInfo(String hash, MultipartFile multipartFile) {
+    /*public ResponseEntity getFileInfo(String hash, MultipartFile multipartFile) {
         if (checkHex(hash, multipartFile)) {
             try (InputStream is = multipartFile.getInputStream()) {
                 int data;
@@ -71,16 +76,16 @@ public class StorageService {
                     System.out.print(data + " ");
                 }
                 return ResponseEntity.ok("added");
-                        /*"Hash:" + hash + ", Filename: " + multipartFile.getOriginalFilename()
+                        *//*"Hash:" + hash + ", Filename: " + multipartFile.getOriginalFilename()
                         + ", Name: " + multipartFile.getName() + ", InputStream: " + multipartFile.getInputStream() + " bytes: " + multipartFile.getBytes();
-*/
+*//*
             } catch (IOException ex) {
                 ex.getMessage();
             }
         }
         return null;
 
-    }
+    }*/
 
     public boolean checkHex(String hash, MultipartFile multipartFile) {
         String md5Hex = new String();
@@ -97,32 +102,12 @@ public class StorageService {
         return false;
     }
     @Transactional
-    public void addFile(String hash, MultipartFile multipartFile) {
-        if (checkHex(hash, multipartFile)) {
-            User user = userRepository.getById(getUserAuthDetails().getId());
-            EntityFile entityFile = new EntityFile();
-            entityFile.setFileName(multipartFile.getOriginalFilename());
-            entityFile.setHash(hash);
-            entityFile.setUser(user);
-            entityFile.setUploadDate(LocalDate.now());
-            entityFile.setFileSize(multipartFile.getSize());
-            try {
-                Path path = Path.of(CloudStorageApplication.PATH + user.getLogin());
-                if (!Files.exists(path)) {
-                    Files.createDirectories(path);
-                }
-                multipartFile.transferTo(Paths.get(CloudStorageApplication.PATH + user.getLogin(), multipartFile.getOriginalFilename()));
-                storageRepository.save(entityFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            throw new IllegalArgumentException("Hash is not correct");
-        }
+    public void addFile(EntityFile entityFile) {
+        storageRepository.save(entityFile);
     }
 
     public Map<String,String> loadFileResponse(String filename) {
-        Path file = Paths.get(CloudStorageApplication.PATH + getUserAuthDetails().getUsername(), filename);
+        Path file = Paths.get(CloudStorageApplication.PATH + authService.getUser().getLogin(), filename);
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = Files.newBufferedReader(file)){
             String line;
@@ -150,28 +135,22 @@ public class StorageService {
     }
     @Transactional
     public void deleteFile(String filename) {
-        Path file = Paths.get(CloudStorageApplication.PATH + getUserAuthDetails().getUsername(), filename);
+        User user = authService.getUser();
+        Path file = Paths.get(CloudStorageApplication.PATH + user.getLogin(), filename);
         try {
             boolean result = Files.deleteIfExists(file);
-            System.out.println("file exist: "+result+" file name: "+filename+" user id: "+getUserAuthDetails().getId());
+            System.out.println("file exist: "+result+" file name: "+filename+" user id: "+ user.getId());
             entityManager.createQuery("DELETE FROM EntityFile WHERE fileName= :fileName and user= :userId")
                     .setParameter("fileName", filename)
-                    .setParameter("userId", getUserAuthDetails().getId())
+                    .setParameter("userId", user.getId())
                     .executeUpdate();
             //storageRepository.deleteByFilenameAndUserid(filename, getUserAuthDetails().getId());
             if(!result){
                 throw new StorageException("file not found");
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("IOException", IOException.class);
+            throw new RuntimeException("File not found:", e);
         }
-    }
-
-
-
-    public UserDetailsImpl getUserAuthDetails() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userDetails;
     }
 }

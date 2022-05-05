@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.minikhanov.cloud_storage.models.EntityFile;
 import ru.minikhanov.cloud_storage.models.security.Role;
 
 import javax.persistence.*;
@@ -34,4 +35,6 @@ public class User {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "id_user"), inverseJoinColumns = @JoinColumn(name = "id_role"))
     private Set<Role> role = new HashSet<>();
+    /*@OneToMany(cascade = CascadeType.ALL)
+    private Set<EntityFile> files = new HashSet<>();*/
 }

@@ -16,6 +16,7 @@ import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.repository.security.RoleRepository;
 import ru.minikhanov.cloud_storage.repository.security.UserRepository;
 import ru.minikhanov.cloud_storage.security.jwt.JwtUtils;
+import ru.minikhanov.cloud_storage.security.services.UserDetailsImpl;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -61,5 +62,15 @@ public class AuthService {
 
     public void deleteToken (String token){
         jwtUtils.deactivateToken(token);
+    }
+
+    public UserDetailsImpl getUserAuthDetails() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        return userDetails;
+    }
+
+    public User getUser (){
+        return userRepository.getById(getUserAuthDetails().getId());
     }
 }

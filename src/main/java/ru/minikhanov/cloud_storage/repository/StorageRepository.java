@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface StorageRepository extends JpaRepository<EntityFile, Long> {
 
+    Boolean existsByFileName(String fileName);
     //Boolean insertFile(String fileName, Long id);
     //@Query("select f from EntityFile f")
     //@Query(value = "SELECT * FROM storage_info WHERE user_id=;", nativeQuery = true)
