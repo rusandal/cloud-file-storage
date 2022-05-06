@@ -1,4 +1,4 @@
-package ru.minikhanov.cloud_storage.ModelTest;
+package ru.minikhanov.cloud_storage.modelTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.minikhanov.cloud_storage.models.EntityFile;
+import ru.minikhanov.cloud_storage.models.security.ERole;
 import ru.minikhanov.cloud_storage.models.security.Role;
 import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.repository.StorageRepository;
@@ -15,10 +16,8 @@ import ru.minikhanov.cloud_storage.repository.security.UserRepository;
 
 import javax.transaction.Transactional;
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.HashSet;
-
-import static ru.minikhanov.cloud_storage.models.security.ERole.ROLE_USER;
+import java.util.Set;
 
 @Transactional
 @SpringBootTest
@@ -34,20 +33,24 @@ public class JpaEntityFileTests {
 
     @BeforeAll
     public static void createUser(){
-        user = new User(-1L, "testUser", "testPassword", false, new HashSet<>());
-        fileInfo = new EntityFile(-1L, "testfile.xxx", "123", 1L, LocalDate.now(), user);
+        user=User.builder().login("testUser").password("testPassword").enabled(false).build();
+        fileInfo=EntityFile.builder().fileName("testfile").fileSize(1L).hash("123").uploadDate(LocalDate.now()).build();
     }
 
     @Test
     @DisplayName("Create file in DB")
     public void addFileInDB(){
-        user.getRole().add(roleRepository.findByName(ROLE_USER).get());
-        userRepository.save(user);
-        fileInfo.setUser(user);
+        Set<Role> roles = new HashSet<>();
+        Role role = roleRepository.findByName(ERole.ROLE_USER)
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        roles.add(role);
+        user.setRole(roles);
+        User user1 = userRepository.save(user);
+        fileInfo.setUser(user1);
         storageRepository.save(fileInfo);
 
-
         Assertions.assertEquals(true, storageRepository.existsByFileName(fileInfo.getFileName()));
-
     }
+
+
 }

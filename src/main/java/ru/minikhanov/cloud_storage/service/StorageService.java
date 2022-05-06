@@ -65,7 +65,8 @@ public class StorageService {
     }*/
 
     public List<EntityFile> getAllFiles() {
-        return storageRepository.findAll();
+        User user = authService.getUser();
+        return storageRepository.findEntityFilesByUser(user);
     }
 
     /*public ResponseEntity getFileInfo(String hash, MultipartFile multipartFile) {
