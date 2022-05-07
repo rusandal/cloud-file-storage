@@ -71,6 +71,7 @@ public class AuthService {
     }
 
     public User getUser (){
-        return userRepository.getById(getUserAuthDetails().getId());
+        String username = getUserAuthDetails().getUsername();
+        return userRepository.findByLogin(username).orElseThrow(()->{throw new RuntimeException("User not found");});
     }
 }

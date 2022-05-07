@@ -65,7 +65,8 @@ public class StorageService {
     }*/
 
     public List<EntityFile> getAllFiles() {
-        User user = authService.getUser();
+        String login = authService.getUser().getLogin();
+        User user = userRepository.findByLogin(login).orElseThrow(()->{throw new RuntimeException("User not found");});
         return storageRepository.findEntityFilesByUser(user);
     }
 
@@ -89,26 +90,25 @@ public class StorageService {
     }*/
 
     public boolean checkHex(String hash, MultipartFile multipartFile) {
-        String md5Hex = new String();
+        String md5Hex;
         try {
             md5Hex = DigestUtils.md5DigestAsHex(new BufferedInputStream(multipartFile.getInputStream()));
+            if (md5Hex.equals(hash)) {
+                return true;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if (md5Hex.equals(hash)) {
-
-            return true;
-        }
-        System.out.println("hash file " + md5Hex + ". Hash receive " + hash);
-        return false;
+        throw new StorageException("Bad hash");
     }
     @Transactional
     public void addFile(EntityFile entityFile) {
         storageRepository.save(entityFile);
     }
 
-    public Map<String,String> loadFileResponse(String filename) {
+    public Map<String,String> getFileByName(String filename) {
         Path file = Paths.get(CloudStorageApplication.PATH + authService.getUser().getLogin(), filename);
+        //Path file = Paths.get(String.valueOf(path), filename);
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = Files.newBufferedReader(file)){
             String line;
@@ -119,9 +119,11 @@ public class StorageService {
             //InputStream fileInputStream = new FileInputStream(String.valueOf(file));
             Map<String, String> response = new HashMap<>();
             if (resource.exists() || resource.isReadable()) {
-                String md5Hex = DigestUtils.md5DigestAsHex(resource.getInputStream());
+                InputStream inputStream = resource.getInputStream();
+                String md5Hex = DigestUtils.md5DigestAsHex(inputStream);
                 response.put("hash", md5Hex);
                 response.put("file", sb.toString());
+                inputStream.close();
                 return response;
             } else {
                 throw new StorageException(

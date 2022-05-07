@@ -1,10 +1,9 @@
 package ru.minikhanov.cloud_storage.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.minikhanov.cloud_storage.models.LoginForm;
+import ru.minikhanov.cloud_storage.models.LoginRequest;
 import ru.minikhanov.cloud_storage.service.AuthService;
 
 @RestController
@@ -16,9 +15,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginForm loginForm){
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
         System.out.println("post login");
-        return authService.getToken(loginForm.getLogin(), loginForm.getPassword());
+        return authService.getToken(loginRequest.getLogin(), loginRequest.getPassword());
     }
 
     @PostMapping("/logou")

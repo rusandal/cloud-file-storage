@@ -3,32 +3,20 @@ package ru.minikhanov.cloud_storage.controller;
 import io.jsonwebtoken.MalformedJwtException;
 import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.apache.tomcat.websocket.AuthenticationException;
-import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AuthorizationServiceException;
-import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import ru.minikhanov.cloud_storage.CloudStorageApplication;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
 import ru.minikhanov.cloud_storage.models.EntityFile;
-import ru.minikhanov.cloud_storage.models.LoginForm;
 import ru.minikhanov.cloud_storage.models.MessageResponse;
 import ru.minikhanov.cloud_storage.models.security.User;
-import ru.minikhanov.cloud_storage.repository.StorageRepository;
-import ru.minikhanov.cloud_storage.security.services.UserDetailsImpl;
 import ru.minikhanov.cloud_storage.service.AuthService;
 import ru.minikhanov.cloud_storage.service.StorageService;
 
@@ -84,7 +72,7 @@ public class StorageController {
 
     @GetMapping("/file")
     public Map<String, String> getFile(@RequestParam("filename") String filename) throws IOException{
-        return storageService.loadFileResponse(filename);
+        return storageService.getFileByName(filename);
     }
 
     @PutMapping("/file")
