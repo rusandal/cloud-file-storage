@@ -1,41 +1,24 @@
 package ru.minikhanov.cloud_storage.controller;
 
-import io.jsonwebtoken.MalformedJwtException;
-import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
-import org.apache.tomcat.websocket.AuthenticationException;
-import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AuthorizationServiceException;
-import org.springframework.util.MultiValueMap;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
-import ru.minikhanov.cloud_storage.CloudStorageApplication;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
 import ru.minikhanov.cloud_storage.models.*;
 import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.service.AuthService;
 import ru.minikhanov.cloud_storage.service.StorageService;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class StorageController {
@@ -101,19 +84,4 @@ public class StorageController {
         }
         return ResponseEntity.ok(filesResponseList);
     }
-
-
-
-   /* private Map<String, Object> exceptionMessage(String message){
-        Map<String, Object> answerObject = new HashMap<>();
-        answerObject.put("id", 0);
-        answerObject.put("message", message);
-        return answerObject;
-    }*/
-    /*@Bean(name = "multipartResolver")
-    public CommonsMultipartResolver multipartResolver() {
-        CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
-        multipartResolver.setMaxUploadSize(100000);
-        return multipartResolver;
-    }*/
 }

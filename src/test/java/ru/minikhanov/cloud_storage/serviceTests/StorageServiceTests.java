@@ -9,6 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +26,7 @@ import ru.minikhanov.cloud_storage.CloudStorageApplication;
 import ru.minikhanov.cloud_storage.Utils.MockUserUtils;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
 import ru.minikhanov.cloud_storage.models.EntityFile;
+import ru.minikhanov.cloud_storage.models.FileStorageProperties;
 import ru.minikhanov.cloud_storage.models.security.ERole;
 import ru.minikhanov.cloud_storage.models.security.Role;
 import ru.minikhanov.cloud_storage.models.security.User;
@@ -41,6 +43,7 @@ import javax.transaction.Transactional;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,16 +80,17 @@ public class StorageServiceTests {
     private UserRepository userRepository;
     @Autowired
     private RoleRepository roleRepository;
-    @Autowired
-    private EntityManager entityManager;
     @MockBean
     private AuthService authServiceMock;
+    @MockBean
+    private FileStorageProperties rootPathMock;
     @Autowired
     private static MockUserUtils mockUserUtils;
     private static List<EntityFile> entityFileList = new ArrayList<>();
     private static User user = new User();
     private static UserDetailsImpl userDetails;
     private static Authentication authentication;
+    private static final String ROOT_PATH = "storage_test";
 
 
     @BeforeAll
@@ -105,20 +109,24 @@ public class StorageServiceTests {
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
-    @Test
-    @DisplayName("Get files by user")
-    public void getAllFilesTest() {
+    @BeforeEach
+    public void createUser(){
         String login = "testUser";
         String password = "testPassword";
         Role role = roleRepository.save(new Role(ERole.ROLE_TEST));
-        User user=User.builder().login(login).password(password).enabled(false).build();
+        User newUser=User.builder().login(login).password(password).enabled(false).build();
         Set<Role> roles = new HashSet<>();
         roles.add(role);
-        user.setRole(roles);
+        newUser.setRole(roles);
         //user= userRepository.save(user);
-        User userFromDb = userRepository.save(user);
+        user = userRepository.save(newUser);
+    }
+
+    @Test
+    @DisplayName("Get files by user")
+    public void getAllFilesTest() {
         for (EntityFile file : entityFileList) {
-            file.setUser(userFromDb);
+            file.setUser(user);
         }
         storageRepository.saveAll(entityFileList);
         Mockito.when(authServiceMock.getUser()).thenReturn(user);
@@ -126,7 +134,7 @@ public class StorageServiceTests {
         Assertions.assertEquals(3, storageService.getAllFiles(3).size());
     }
 
-    @Test
+    //@Test
     /*@DisplayName("Check file hex")
     public void checkHexTest() {
         MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt", "text/plane", "Spring Framework".getBytes());
@@ -148,78 +156,83 @@ public class StorageServiceTests {
         Path pathDir = null;
         Path pathFile;
         try {
-            pathDir = Path.of(CloudStorageApplication.PATH + user.getLogin());
+            pathDir = Path.of(ROOT_PATH, user.getLogin());
             if (!Files.exists(pathDir)) {
                 Files.createDirectories(pathDir);
             }
             pathFile = Files.createFile(Path.of(String.valueOf(pathDir), "myTestFile.tmp"));
             Files.write(pathFile, "test test test".getBytes());
             Mockito.when(authServiceMock.getUser()).thenReturn(user);
-            Map<String, String> fileInfo = storageService.getFileByName("myTestFile.tmp");
-            System.out.println(fileInfo);
-            Assertions.assertTrue(fileInfo.containsKey("file"));
-            Assertions.assertTrue(fileInfo.containsKey("hash"));
+            Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
+            Resource resource = storageService.getFileByName("myTestFile.tmp");
+            Assertions.assertTrue(resource.isFile());
+            Assertions.assertEquals("myTestFile.tmp", resource.getFilename());
+            Files.deleteIfExists(pathFile);
+            Assertions.assertThrows(StorageException.class, ()->{storageService.getFileByName("myTestFile.tmp");});
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            FileUtils.deleteDirectory(pathDir.toFile());
-        }
+        } /*finally {
+            FileUtils.deleteQuietly(pathDir.toFile());
+        }*/
     }
 
     @Test
-    @DisplayName("delete file if not exist in storage")
-    public void deleteFileIfNotInStorageTest(){
-        String login = "testUser";
-        String password = "testPassword";
-        Role role = roleRepository.save(new Role(ERole.ROLE_TEST));
-        User user=User.builder().login(login).password(password).enabled(false).build();
-        Set<Role> roles = new HashSet<>();
-        roles.add(role);
-        user.setRole(roles);
-        user= userRepository.save(user);
-        User receiveUser = userRepository.save(user);
-        for (EntityFile file : entityFileList) {
-            file.setUser(receiveUser);
-        }
-        storageRepository.saveAll(entityFileList);
-        Mockito.when(authServiceMock.getUser()).thenReturn(receiveUser);
-        Assertions.assertThrows(StorageException.class, ()->{storageService.deleteFile("testFileName1.txt");});
-
-        //Assertions.assertThrows(StorageException.class, ()->{storageService.deleteFile("testFileName1.txt");});
-    }
-    @Test
-    @DisplayName("delete file if exist in storage")
-    public void deleteFileIfInStorageTest(){
-        String login = "testUser";
-        String password = "testPassword";
-        Role role = roleRepository.save(new Role(ERole.ROLE_TEST));
-        User user=User.builder().login(login).password(password).enabled(false).build();
-        Set<Role> roles = new HashSet<>();
-        roles.add(role);
-        user.setRole(roles);
-        user= userRepository.save(user);
+    @DisplayName("delete file from DB and storage")
+    public void deleteFileTest(){
         String deleteFile = "testFileName1.txt";
-        //User receiveUser = userRepository.save(user);
         for (EntityFile file : entityFileList) {
             file.setUser(user);
         }
         storageRepository.saveAll(entityFileList);
         Mockito.when(authServiceMock.getUser()).thenReturn(user);
+        Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
         Path dir;
         Path file;
         try {
-            dir = Files.createDirectories(Path.of(CloudStorageApplication.PATH, user.getLogin()));
-            file = Files.createFile(Paths.get(CloudStorageApplication.PATH, user.getLogin(), deleteFile));
+            dir = Files.createDirectories(Path.of(ROOT_PATH, user.getLogin()));
+            file = Files.createFile(Paths.get(ROOT_PATH, user.getLogin(), deleteFile));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        System.out.println(user);
         storageService.deleteFile(deleteFile);
         FileUtils.deleteQuietly(dir.toFile());
-        Assertions.assertFalse(storageRepository.findById(entityFileList.get(1).getId()).get().getFileName().equals(deleteFile));
-        /*Assertions.assertTrue(Files.exists());*/
-        System.out.println(mySQLContainer);
-        Assertions.assertThrows(StorageException.class, ()->{storageService.deleteFile("testFileName1.txt");});
+        Assertions.assertFalse(storageRepository.findById(entityFileList.get(0).getId()).isPresent());
+        Assertions.assertFalse(Files.isReadable(file));
+    }
 
+    @Test
+    @DisplayName("Hex from file")
+    public void getHexTest() throws IOException {
+        Path dir = Files.createDirectories(Path.of(ROOT_PATH, user.getLogin()));
+        Path file = Files.createFile(Paths.get(ROOT_PATH, user.getLogin(), "myTestFile.tmp"));
+        Files.write(file, "test test test".getBytes());
+        Mockito.when(authServiceMock.getUser()).thenReturn(user);
+        Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
+        Assertions.assertEquals(DigestUtils.md5DigestAsHex(Files.readAllBytes(file)), storageService.getHexFromFile("myTestFile.tmp"));
+        Files.deleteIfExists(file);
+        Assertions.assertThrows(StorageException.class, ()->{storageService.getHexFromFile("myTestFile.tmp");});
+    }
+
+    @Test
+    @DisplayName("Rename File")
+    public void renameFileTest() throws IOException {
+        String newName = "newName.txt";
+        for (EntityFile file : entityFileList) {
+            file.setUser(user);
+        }
+        List<EntityFile> filesFromDb = storageRepository.saveAll(entityFileList);
+        String oldName = filesFromDb.get(1).getFileName();
+        Mockito.when(authServiceMock.getUser()).thenReturn(user);
+        Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
+        FileUtils.deleteDirectory(new File(ROOT_PATH, user.getLogin()));
+        Path dir = Files.createDirectories(Path.of(ROOT_PATH, user.getLogin()));
+        Path file = Files.createFile(Paths.get(ROOT_PATH, user.getLogin(), oldName));
+        Files.write(file, "test test test".getBytes());
+        storageService.renameFile(oldName, newName);
+        System.out.println(storageRepository.findAll());
+        Assertions.assertEquals(newName, file.getFileName().toString());
+        System.out.println(storageRepository.findAll());
+        Assertions.assertEquals(newName, storageRepository.getById(filesFromDb.get(1).getId()).getFileName());
+        Files.deleteIfExists(file);
     }
 }

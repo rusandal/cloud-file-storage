@@ -111,18 +111,6 @@ public class StorageService {
         return md5Hex;
     }
 
-    /*public boolean checkHex(String hash, MultipartFile multipartFile) {
-        String md5Hex;
-        try {
-            md5Hex = DigestUtils.md5DigestAsHex(new BufferedInputStream(multipartFile.getInputStream()));
-            if (md5Hex.equals(hash)) {
-                return true;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        throw new StorageException("Bad hash");
-    }*/
     @Transactional
     public void addFile(EntityFile entityFile) {
         storageRepository.save(entityFile);
@@ -130,17 +118,6 @@ public class StorageService {
 
     public Resource getFileByName(String filename) {
         Path file = Paths.get(rootPath.getUploadDir(), authService.getUser().getLogin(), filename);
-        /*Path file = Paths.get(String.valueOf(path), filename);
-
-        if (!Files.isReadable(file)){
-            throw new StorageException("File is not readable");
-        }
-        try (InputStream inputStream = new UrlResource(file.toUri()).getInputStream();){
-            Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
-
-        } catch (IOException e){
-            throw new StorageException("Failed to store file "+filename);
-        }*/
         try {
             Resource resource = new UrlResource(file.toUri());
             //InputStream fileInputStream = new FileInputStream(String.valueOf(file));
@@ -156,8 +133,6 @@ public class StorageService {
                 throw new StorageException(
                         "Could not read file: " + filename);
             }
-        } catch (MalformedURLException e) {
-            throw new StorageException("Could not read file: " + filename, e);
         } catch (IOException e) {
             throw new StorageException("Could not get hash: " + filename, e);
         }
@@ -177,10 +152,10 @@ public class StorageService {
                     .executeUpdate();*/
         } catch (IOException e) {
             log.error("IOException", IOException.class);
-            throw new StorageException("File not found:", e);
+            throw new StorageException("Can not lete file:", e);
         }
     }
-
+    @Transactional
     public void renameFile(String filename, String newFileName) {
         User user = authService.getUser();
         Path file = Paths.get(rootPath.getUploadDir(), user.getLogin(), filename);
@@ -192,5 +167,6 @@ public class StorageService {
             throw new StorageException("file not found");
         }
         storageRepository.updateFileName(filename, newFileName, user.getId());
+
     }
 }

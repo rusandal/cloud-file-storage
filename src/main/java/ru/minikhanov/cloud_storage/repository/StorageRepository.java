@@ -18,7 +18,7 @@ public interface StorageRepository extends JpaRepository<EntityFile, Long> {
     @Transactional
     void deleteByFileNameAndUser(String filename, User user);
     @Transactional
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("update EntityFile ef set ef.fileName = :newFileName where ef.fileName = :fileName AND ef.user.id = :user_id")
     void updateFileName(@Param("fileName") String filename, @Param("newFileName") String name, @Param("user_id") Long user_id);
     //Boolean insertFile(String fileName, Long id);
