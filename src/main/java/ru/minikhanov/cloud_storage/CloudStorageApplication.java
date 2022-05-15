@@ -20,7 +20,7 @@ import java.util.Scanner;
 })
 public class CloudStorageApplication {
 	public static HashSet<String> hashSetBadToken = new HashSet<>();
-	public static final String PATH = "storage";
+	//public static final String PATH = "storage";
 
 	public static void main(String[] args) {
 		SpringApplication.run(CloudStorageApplication.class, args);

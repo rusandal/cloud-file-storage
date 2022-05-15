@@ -4,6 +4,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.apache.tomcat.websocket.AuthenticationException;
 import org.hibernate.exception.ConstraintViolationException;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
@@ -19,10 +20,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import ru.minikhanov.cloud_storage.CloudStorageApplication;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
-import ru.minikhanov.cloud_storage.models.EntityFile;
-import ru.minikhanov.cloud_storage.models.FilesResponse;
-import ru.minikhanov.cloud_storage.models.MessageResponse;
-import ru.minikhanov.cloud_storage.models.NewFileName;
+import ru.minikhanov.cloud_storage.models.*;
 import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.service.AuthService;
 import ru.minikhanov.cloud_storage.service.StorageService;
@@ -38,17 +36,19 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 @RestController
 public class StorageController {
-    private static final Logger logger = (Logger) LoggerFactory.getLogger(StorageController.class);
+    private static final Logger logger = LoggerFactory.getLogger(StorageController.class);
     private final StorageService storageService;
     private final AuthService authService;
+    private final FileStorageProperties rootPath;
 
-    public StorageController(StorageService storageService, AuthService authService) {
+
+    public StorageController(StorageService storageService, AuthService authService, FileStorageProperties fileStorageProperties) {
         this.storageService = storageService;
         this.authService = authService;
+        this.rootPath = fileStorageProperties;
     }
 
     @PostMapping(value = "/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -61,14 +61,14 @@ public class StorageController {
         entityFile.setFileSize(multipartFile.getSize());
         entityFile.setUser(user);
         try {
-            Path path = Path.of(CloudStorageApplication.PATH, user.getLogin());
+            Path path = Path.of(rootPath.getUploadDir(), user.getLogin());
             if (!Files.exists(path)) {
                 Files.createDirectories(path);
             }
-            multipartFile.transferTo(Paths.get(CloudStorageApplication.PATH, user.getLogin(), multipartFile.getOriginalFilename()));
+            multipartFile.transferTo(Paths.get(rootPath.getUploadDir(), user.getLogin(), multipartFile.getOriginalFilename()));
             storageService.addFile(entityFile);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new StorageException("User directory not created or file not saved");
         }
     }
 

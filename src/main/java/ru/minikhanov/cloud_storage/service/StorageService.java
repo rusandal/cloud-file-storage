@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.minikhanov.cloud_storage.CloudStorageApplication;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
 import ru.minikhanov.cloud_storage.models.EntityFile;
+import ru.minikhanov.cloud_storage.models.FileStorageProperties;
 import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.repository.StorageRepository;
 import ru.minikhanov.cloud_storage.repository.security.UserRepository;
@@ -47,13 +48,15 @@ public class StorageService {
     private final UserDetailsService userDetailsService;
     private final UserRepository userRepository;
     private final AuthService authService;
+    private FileStorageProperties rootPath;
     static final Logger log = LoggerFactory.getLogger(StorageService.class);
     @Autowired
-    public StorageService(StorageRepository storageRepository, UserDetailsService userDetailsService, UserRepository userRepository, AuthService authService) {
+    public StorageService(StorageRepository storageRepository, UserDetailsService userDetailsService, UserRepository userRepository, AuthService authService, FileStorageProperties fileStorageProperties) {
         this.storageRepository = storageRepository;
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
         this.authService = authService;
+        this.rootPath = fileStorageProperties;
     }
 
     @PersistenceContext
@@ -113,7 +116,7 @@ public class StorageService {
     }
 
     public Map<String,String> getFileByName(String filename) {
-        Path file = Paths.get(CloudStorageApplication.PATH, authService.getUser().getLogin(), filename);
+        Path file = Paths.get(rootPath.getUploadDir(), authService.getUser().getLogin(), filename);
         //Path file = Paths.get(String.valueOf(path), filename);
 
         StringBuilder sb = new StringBuilder();
@@ -142,7 +145,7 @@ public class StorageService {
     @Transactional
     public void deleteFile(String filename) {
         User user = authService.getUser();
-        Path file = Paths.get(CloudStorageApplication.PATH, user.getLogin(), filename);
+        Path file = Paths.get(rootPath.getUploadDir(), user.getLogin(), filename);
         try {
             boolean result = Files.deleteIfExists(file);
             System.out.println("file exist: "+result+" file name: "+filename+" user id: "+ user.getId());
@@ -159,8 +162,8 @@ public class StorageService {
 
     public void renameFile(String filename, String newFileName) {
         User user = authService.getUser();
-        Path file = Paths.get(CloudStorageApplication.PATH, user.getLogin(), filename);
-        Path newFile = Paths.get(CloudStorageApplication.PATH, user.getLogin(), newFileName);
+        Path file = Paths.get(rootPath.getUploadDir(), user.getLogin(), filename);
+        Path newFile = Paths.get(rootPath.getUploadDir(), user.getLogin(), newFileName);
         try {
             Files.move(file,newFile);
         } catch (IOException e) {
