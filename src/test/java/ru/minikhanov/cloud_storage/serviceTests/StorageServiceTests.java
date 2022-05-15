@@ -127,7 +127,7 @@ public class StorageServiceTests {
     }
 
     @Test
-    @DisplayName("Check file hex")
+    /*@DisplayName("Check file hex")
     public void checkHexTest() {
         MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt", "text/plane", "Spring Framework".getBytes());
         String md5Hex;
@@ -140,7 +140,7 @@ public class StorageServiceTests {
         Throwable throwable = Assertions.assertThrows(StorageException.class, ()->{storageService.checkHex(badmd5Hex, multipartFile);});
         Assertions.assertTrue(storageService.checkHex(md5Hex, multipartFile));
         Assertions.assertNotNull(throwable);
-    }
+    }*/
 
     @Test
     @DisplayName("Get file by name")

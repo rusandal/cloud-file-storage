@@ -28,13 +28,11 @@ import ru.minikhanov.cloud_storage.security.services.UserDetailsImpl;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.security.auth.message.AuthException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -98,7 +96,22 @@ public class StorageService {
 
     }*/
 
-    public boolean checkHex(String hash, MultipartFile multipartFile) {
+    public String getHexFromFile(String fileName){
+        User user = authService.getUser();
+        Path file = Paths.get(rootPath.getUploadDir(), user.getLogin(), fileName);
+        if(!Files.exists(file) || !Files.isReadable(file)){
+            throw new StorageException("File "+file+" is not exist");
+        }
+        String md5Hex;
+        try {
+            md5Hex = DigestUtils.md5DigestAsHex(Files.readAllBytes(file));
+        } catch (IOException e) {
+            throw new StorageException("Can not get hash from file "+fileName);
+        }
+        return md5Hex;
+    }
+
+    /*public boolean checkHex(String hash, MultipartFile multipartFile) {
         String md5Hex;
         try {
             md5Hex = DigestUtils.md5DigestAsHex(new BufferedInputStream(multipartFile.getInputStream()));
@@ -109,28 +122,36 @@ public class StorageService {
             e.printStackTrace();
         }
         throw new StorageException("Bad hash");
-    }
+    }*/
     @Transactional
     public void addFile(EntityFile entityFile) {
         storageRepository.save(entityFile);
     }
 
-    public Map<String,String> getFileByName(String filename) {
+    public Resource getFileByName(String filename) {
         Path file = Paths.get(rootPath.getUploadDir(), authService.getUser().getLogin(), filename);
-        //Path file = Paths.get(String.valueOf(path), filename);
+        /*Path file = Paths.get(String.valueOf(path), filename);
 
-        StringBuilder sb = new StringBuilder();
+        if (!Files.isReadable(file)){
+            throw new StorageException("File is not readable");
+        }
+        try (InputStream inputStream = new UrlResource(file.toUri()).getInputStream();){
+            Files.copy(inputStream, file, StandardCopyOption.REPLACE_EXISTING);
+
+        } catch (IOException e){
+            throw new StorageException("Failed to store file "+filename);
+        }*/
         try {
             Resource resource = new UrlResource(file.toUri());
             //InputStream fileInputStream = new FileInputStream(String.valueOf(file));
-            Map<String, String> response = new HashMap<>();
+            /*Map<String, Resource> response = new HashMap<>();*/
             if (resource.exists() || resource.isReadable()) {
                 InputStream inputStream = resource.getInputStream();
-                String md5Hex = DigestUtils.md5DigestAsHex(inputStream);
-                response.put("hash", md5Hex);
-                response.put("file", file.getFileName().toString());
+                //String md5Hex = DigestUtils.md5DigestAsHex(inputStream);
+                /*response.put("hash", md5Hex);
+                response.put("file", file.getFileName().toString());*/
                 inputStream.close();
-                return response;
+                return resource;
             } else {
                 throw new StorageException(
                         "Could not read file: " + filename);

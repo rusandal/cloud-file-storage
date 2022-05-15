@@ -7,9 +7,9 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.convert.ConversionFailedException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.util.MultiValueMap;
@@ -77,9 +77,13 @@ public class StorageController {
         storageService.deleteFile(filename);
     }
 
-    @GetMapping("/file")
-    public Map<String, String> getFile(@RequestParam("filename") String filename) /*throws IOException*/ {
-        return storageService.getFileByName(filename);
+    @GetMapping(value = "/file")
+    public ResponseEntity<Resource> getFile(@RequestParam("filename") String filename) /*throws IOException*/ {
+        Resource resource = storageService.getFileByName(filename);
+        return ResponseEntity.ok()
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(resource);
+
     }
 
     @PutMapping("/file")

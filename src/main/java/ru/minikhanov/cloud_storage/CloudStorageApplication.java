@@ -33,12 +33,12 @@ public class CloudStorageApplication {
 			e.printStackTrace();
 		}
 
-		try {
+		/*try {
 			String md5Hex = DigestUtils.md5DigestAsHex(new FileInputStream("badtoken.txt"));
 			System.out.println(md5Hex);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}*/
 	}
 
 
