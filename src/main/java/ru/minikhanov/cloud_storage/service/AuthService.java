@@ -28,7 +28,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder encoder;
     private final JwtUtils jwtUtils;
-
+    @Autowired
     public AuthService(AuthenticationManager authenticationManager, UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder encoder, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
@@ -37,15 +37,15 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
     }
 
-    public ResponseEntity<?> getToken (String login, String password){
+    public String getToken (String login, String password){
 
         if(userRepository.existsByLogin(login)){
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(login, password));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtUtils.generateJwtToken(authentication);
-
-            return ResponseEntity.ok(new JwtResponse(jwt));
+            return jwt;
+            //return ResponseEntity.ok(new JwtResponse(jwt));
         } else {
             Set<Role> roles = new HashSet<>();
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
@@ -56,7 +56,8 @@ public class AuthService {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(login, password));
             String jwt = jwtUtils.generateJwtToken(authentication);
-            return ResponseEntity.ok(new JwtResponse(jwt));
+            return jwt;
+            //return ResponseEntity.ok(new JwtResponse(jwt));
         }
     }
 
@@ -71,6 +72,7 @@ public class AuthService {
     }
 
     public User getUser (){
-        return userRepository.getById(getUserAuthDetails().getId());
+        String username = getUserAuthDetails().getUsername();
+        return userRepository.findByLogin(username).orElseThrow(()->{throw new RuntimeException("User not found");});
     }
 }

@@ -16,9 +16,7 @@
             <column name="file_size" type="int">
                 <constraints nullable="false"/>
             </column>
-            <column name="hash" type="varchar(255)">
-                <constraints nullable="false"/>
-            </column>
+            <column name="hash" type="varchar(255)"/>
             <column name="upload_date" type="date"/>
         </createTable>
     </changeSet>

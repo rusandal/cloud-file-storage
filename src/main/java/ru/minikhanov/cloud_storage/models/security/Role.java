@@ -7,6 +7,7 @@ import javax.persistence.*;
 
 @Setter
 @Getter
+@ToString
 @Entity
 @Table(name = "role_table")
 public class Role {

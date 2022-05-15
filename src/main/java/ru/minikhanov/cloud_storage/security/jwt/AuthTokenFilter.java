@@ -36,7 +36,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
-            if (jwt != null && !CloudStorageApplication.hashSetBadToken.contains(jwt) &&jwtUtils.validateJwtToken(jwt)) {
+            System.out.println(CloudStorageApplication.hashSetBadToken.contains(jwt));
+            if (jwt != null && !CloudStorageApplication.hashSetBadToken.contains(jwt) && jwtUtils.validateJwtToken(jwt)) {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -51,10 +52,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     }
 
     private String parseJwt(HttpServletRequest request){
-        String headerAuth = request.getHeader("auth_token");
-        if (StringUtils.hasText(headerAuth)) {
-            return headerAuth;
+        String headerAuth = request.getHeader("auth-token");
+        if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
+            return headerAuth.substring(7, headerAuth.length());
         }
+        /*if (StringUtils.hasText(headerAuth)) {
+            return headerAuth;
+        }*/
         return null;
     }
 }
