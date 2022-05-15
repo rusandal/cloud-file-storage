@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Cascade;
 import ru.minikhanov.cloud_storage.models.security.User;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
 
 @Entity
@@ -23,7 +25,6 @@ public class EntityFile {
     private Long id;
     @NotNull
     private String fileName;
-    @NotNull
     private String hash;
     private Long fileSize;
     private LocalDate uploadDate;

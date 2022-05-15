@@ -49,16 +49,6 @@ public class AuthServiceTests {
     private UserDetailsImpl userDetails;
     private UsernamePasswordAuthenticationToken authentication;
 
-    /*@BeforeAll
-    public void createUser(){
-        user=User.builder().login("testUser").password("testPassword").enabled(false).id(99999999L).build();
-        role = new Role(ERole.ROLE_USER);
-        roles.add(role);
-        user.setRole(roles);
-                *//*roleRepository.findByName(ERole.ROLE_USER)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-    }*/
-
     @BeforeEach
     public void addUserToSecureContext(){
         userDetails = UserDetailsImpl.build(user);
@@ -88,14 +78,15 @@ public class AuthServiceTests {
     public void getTokenTest(){
         Mockito.when(userRepository.existsByLogin(user.getLogin())).thenReturn(true);
         Mockito.when(authenticationManager.authenticate(Mockito.any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        ResponseEntity<?> responseEntity = authService.getToken(user.getLogin(), user.getPassword());
+        /*ResponseEntity<?> responseEntity = authService.getToken(user.getLogin(), user.getPassword());
         Assertions.assertEquals(responseEntity.getStatusCodeValue(), 200);
         Assertions.assertTrue(responseEntity.getBody().toString().contains("auth_token"));
-
+*/
+        Assertions.assertFalse(authService.getToken(user.getLogin(), user.getPassword()).isEmpty());
     }
     @Test
-    @DisplayName("Get token if login is not find")
-    public void getTokenIfLoginNotFindTest(){
+    @DisplayName("New user get token")
+    public void getTokenIfLoginNotFoundTest(){
         Role role = new Role();
         role.setId(999);
         role.setName(ERole.ROLE_USER);
@@ -104,9 +95,10 @@ public class AuthServiceTests {
         Mockito.when(userRepository.save(user)).thenReturn(user);
         Mockito.when(roleRepository.findByName(ERole.ROLE_USER)).thenReturn(roleOptional);
         Mockito.when(authenticationManager.authenticate(Mockito.any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        ResponseEntity<?> responseEntity = authService.getToken(user.getLogin(), user.getPassword());
+        /*ResponseEntity<?> responseEntity = authService.getToken(user.getLogin(), user.getPassword());
         System.out.println(responseEntity.getBody());
         Assertions.assertTrue(responseEntity.getStatusCode().is2xxSuccessful());
-        Assertions.assertTrue(responseEntity.getBody().toString().contains("auth_token"));
+        Assertions.assertTrue(responseEntity.getBody().toString().contains("auth_token"));*/
+        Assertions.assertFalse(authService.getToken(user.getLogin(), user.getPassword()).isEmpty());
     }
 }

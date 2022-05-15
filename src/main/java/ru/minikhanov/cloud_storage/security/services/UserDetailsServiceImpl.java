@@ -11,8 +11,13 @@ import ru.minikhanov.cloud_storage.repository.security.UserRepository;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
-    @Autowired
+    final
     UserRepository userRepository;
+
+    public UserDetailsServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {

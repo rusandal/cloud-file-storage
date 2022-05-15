@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileUrlResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,7 +29,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.io.*;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
@@ -45,7 +48,7 @@ public class StorageService {
     private final UserRepository userRepository;
     private final AuthService authService;
     static final Logger log = LoggerFactory.getLogger(StorageService.class);
-
+    @Autowired
     public StorageService(StorageRepository storageRepository, UserDetailsService userDetailsService, UserRepository userRepository, AuthService authService) {
         this.storageRepository = storageRepository;
         this.userDetailsService = userDetailsService;
@@ -64,10 +67,13 @@ public class StorageService {
         return files;
     }*/
 
-    public List<EntityFile> getAllFiles() {
+    public List<EntityFile> getAllFiles(Integer limit) {
         String login = authService.getUser().getLogin();
         User user = userRepository.findByLogin(login).orElseThrow(()->{throw new RuntimeException("User not found");});
-        return storageRepository.findEntityFilesByUser(user);
+        //PageRequest pageRequest = PageRequest.of(0,limit);
+        System.out.println(storageRepository.findEntityFilesByUser(user/*, PageRequest.of(0,limit))*/));
+
+        return storageRepository.findEntityFilesByUser(user/*, PageRequest.of(0,limit)*/);
     }
 
     /*public ResponseEntity getFileInfo(String hash, MultipartFile multipartFile) {
@@ -107,14 +113,11 @@ public class StorageService {
     }
 
     public Map<String,String> getFileByName(String filename) {
-        Path file = Paths.get(CloudStorageApplication.PATH + authService.getUser().getLogin(), filename);
+        Path file = Paths.get(CloudStorageApplication.PATH, authService.getUser().getLogin(), filename);
         //Path file = Paths.get(String.valueOf(path), filename);
+
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = Files.newBufferedReader(file)){
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line).append(System.lineSeparator());
-            }
+        try {
             Resource resource = new UrlResource(file.toUri());
             //InputStream fileInputStream = new FileInputStream(String.valueOf(file));
             Map<String, String> response = new HashMap<>();
@@ -122,7 +125,7 @@ public class StorageService {
                 InputStream inputStream = resource.getInputStream();
                 String md5Hex = DigestUtils.md5DigestAsHex(inputStream);
                 response.put("hash", md5Hex);
-                response.put("file", sb.toString());
+                response.put("file", file.getFileName().toString());
                 inputStream.close();
                 return response;
             } else {
@@ -139,21 +142,31 @@ public class StorageService {
     @Transactional
     public void deleteFile(String filename) {
         User user = authService.getUser();
-        Path file = Paths.get(CloudStorageApplication.PATH + user.getLogin(), filename);
+        Path file = Paths.get(CloudStorageApplication.PATH, user.getLogin(), filename);
         try {
             boolean result = Files.deleteIfExists(file);
             System.out.println("file exist: "+result+" file name: "+filename+" user id: "+ user.getId());
-            entityManager.createQuery("DELETE FROM EntityFile WHERE fileName= :fileName and user= :userId")
+            storageRepository.deleteByFileNameAndUser(filename,user);
+            /*entityManager.createQuery("DELETE FROM EntityFile WHERE fileName= :fileName and user= :user")
                     .setParameter("fileName", filename)
-                    .setParameter("userId", user.getId())
-                    .executeUpdate();
-            //storageRepository.deleteByFilenameAndUserid(filename, getUserAuthDetails().getId());
-            if(!result){
-                throw new StorageException("file not found");
-            }
+                    .setParameter("user", user)
+                    .executeUpdate();*/
         } catch (IOException e) {
             log.error("IOException", IOException.class);
-            throw new RuntimeException("File not found:", e);
+            throw new StorageException("File not found:", e);
         }
+    }
+
+    public void renameFile(String filename, String newFileName) {
+        User user = authService.getUser();
+        Path file = Paths.get(CloudStorageApplication.PATH, user.getLogin(), filename);
+        Path newFile = Paths.get(CloudStorageApplication.PATH, user.getLogin(), newFileName);
+        try {
+            Files.move(file,newFile);
+        } catch (IOException e) {
+            storageRepository.deleteByFileNameAndUser(filename, user);
+            throw new StorageException("file not found");
+        }
+        storageRepository.updateFileName(filename, newFileName, user.getId());
     }
 }

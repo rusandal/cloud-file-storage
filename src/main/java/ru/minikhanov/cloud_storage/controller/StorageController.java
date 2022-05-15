@@ -4,10 +4,15 @@ import io.jsonwebtoken.MalformedJwtException;
 import org.apache.tomcat.util.http.fileupload.impl.SizeLimitExceededException;
 import org.apache.tomcat.websocket.AuthenticationException;
 import org.hibernate.exception.ConstraintViolationException;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AuthorizationServiceException;
+import org.springframework.util.MultiValueMap;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
@@ -15,21 +20,29 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.minikhanov.cloud_storage.CloudStorageApplication;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
 import ru.minikhanov.cloud_storage.models.EntityFile;
+import ru.minikhanov.cloud_storage.models.FilesResponse;
 import ru.minikhanov.cloud_storage.models.MessageResponse;
+import ru.minikhanov.cloud_storage.models.NewFileName;
 import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.service.AuthService;
 import ru.minikhanov.cloud_storage.service.StorageService;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @RestController
 public class StorageController {
+    private static final Logger logger = (Logger) LoggerFactory.getLogger(StorageController.class);
     private final StorageService storageService;
     private final AuthService authService;
 
@@ -40,68 +53,52 @@ public class StorageController {
 
     @PostMapping(value = "/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(code = HttpStatus.OK)
-    public void addFile(@RequestParam("hash") String hash, @RequestParam("file") MultipartFile multipartFile){
+    public void addFile(@RequestParam("file") MultipartFile multipartFile) {
         User user = authService.getUser();
-        if (storageService.checkHex(hash, multipartFile)) {
-            EntityFile entityFile = new EntityFile();
-            entityFile.setFileName(multipartFile.getOriginalFilename());
-            entityFile.setHash(hash);
-            entityFile.setUploadDate(LocalDate.now());
-            entityFile.setFileSize(multipartFile.getSize());
-            entityFile.setUser(user);
-            try {
-                Path path = Path.of(CloudStorageApplication.PATH + user.getLogin());
-                if (!Files.exists(path)) {
-                    Files.createDirectories(path);
-                }
-                multipartFile.transferTo(Paths.get(CloudStorageApplication.PATH + user.getLogin(), multipartFile.getOriginalFilename()));
-                storageService.addFile(entityFile);
-            } catch (IOException e) {
-                e.printStackTrace();
+        EntityFile entityFile = new EntityFile();
+        entityFile.setFileName(multipartFile.getOriginalFilename());
+        entityFile.setUploadDate(LocalDate.now());
+        entityFile.setFileSize(multipartFile.getSize());
+        entityFile.setUser(user);
+        try {
+            Path path = Path.of(CloudStorageApplication.PATH, user.getLogin());
+            if (!Files.exists(path)) {
+                Files.createDirectories(path);
             }
-        } else {
-            throw new IllegalArgumentException("Hash is not correct");
+            multipartFile.transferTo(Paths.get(CloudStorageApplication.PATH, user.getLogin(), multipartFile.getOriginalFilename()));
+            storageService.addFile(entityFile);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
     }
 
     @DeleteMapping("/file")
-    public void deleteFile(@RequestParam("filename") String filename){
+    public void deleteFile(@RequestParam(value = "filename", required = false) String filename) {
         storageService.deleteFile(filename);
     }
 
     @GetMapping("/file")
-    public Map<String, String> getFile(@RequestParam("filename") String filename) throws IOException{
+    public Map<String, String> getFile(@RequestParam("filename") String filename) /*throws IOException*/ {
         return storageService.getFileByName(filename);
     }
 
     @PutMapping("/file")
-    public ResponseEntity<Object> putFile(){
-        return ResponseEntity.ok().body("body put file");
+    @ResponseStatus(code = HttpStatus.OK)
+    public void putFile(@RequestParam(value = "filename") String filename, @RequestBody NewFileName newFileName) {
+        storageService.renameFile(filename, newFileName.getFileName());
     }
 
     @GetMapping("/list")
-    public List<EntityFile> getFiles(){
-        return storageService.getAllFiles();
+    public ResponseEntity<List<FilesResponse>> getFiles(@RequestParam("limit") Integer limit) {
+        List<EntityFile> entityFileList = storageService.getAllFiles(limit);
+        List<FilesResponse> filesResponseList = new ArrayList<>();
+        for (EntityFile entityFile : entityFileList) {
+            filesResponseList.add(new FilesResponse(entityFile.getFileSize(), entityFile.getFileName()));
+        }
+        return ResponseEntity.ok(filesResponseList);
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, MissingServletRequestParameterException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public MessageResponse handlerIllegalArgumentException(Exception e){
-        return new MessageResponse(e.getMessage());
-    }
 
-    @ExceptionHandler({IOException.class, NullPointerException.class, ConstraintViolationException.class, StorageException.class, SizeLimitExceededException.class})
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public MessageResponse handlerIOException(Exception e){
-        return new MessageResponse(e.getMessage());
-    }
-
-    @ExceptionHandler({AuthorizationServiceException.class, AuthenticationException.class, HttpClientErrorException.Unauthorized.class, MalformedJwtException.class})
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public MessageResponse handlerUnauthorized(Exception e){
-        return new MessageResponse(e.getMessage());
-    }
 
    /* private Map<String, Object> exceptionMessage(String message){
         Map<String, Object> answerObject = new HashMap<>();

@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.minikhanov.cloud_storage.models.LoginRequest;
+import ru.minikhanov.cloud_storage.models.security.JwtResponse;
 import ru.minikhanov.cloud_storage.service.AuthService;
 
 @RestController
@@ -17,12 +18,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest){
         System.out.println("post login");
-        return authService.getToken(loginRequest.getLogin(), loginRequest.getPassword());
+        String token = authService.getToken(loginRequest.getLogin(), loginRequest.getPassword());
+        return ResponseEntity.ok(new JwtResponse(token));
     }
 
-    @PostMapping("/logou")
+    @GetMapping("/login?logout")
     @ResponseStatus(code = HttpStatus.OK)
-    public void logout(@RequestHeader("auth_token") String token){
+    public void logout(@RequestHeader("auth-token") String token){
         System.out.println("post logout");
         authService.deleteToken(token);
     }
