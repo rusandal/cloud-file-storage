@@ -23,7 +23,6 @@ public class ControllerExceptionHandler {
     @ExceptionHandler({IllegalArgumentException.class, MissingServletRequestParameterException.class, HttpMessageNotReadableException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public MessageResponse handlerIllegalArgumentException(Exception e) {
-        System.out.println(e.getClass());
         return new MessageResponse(e.getMessage());
     }
 

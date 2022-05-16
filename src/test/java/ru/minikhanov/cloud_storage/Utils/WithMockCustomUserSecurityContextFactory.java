@@ -8,6 +8,7 @@ import org.springframework.security.test.context.support.WithSecurityContextFact
 import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.security.services.UserDetailsImpl;
 
+/*
 public class WithMockCustomUserSecurityContextFactory implements WithSecurityContextFactory<WithMockCustomUser> {
 
     @Override
@@ -21,3 +22,4 @@ public class WithMockCustomUserSecurityContextFactory implements WithSecurityCon
     }
 
 }
+*/

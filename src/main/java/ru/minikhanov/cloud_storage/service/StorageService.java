@@ -56,45 +56,17 @@ public class StorageService {
         this.authService = authService;
         this.rootPath = fileStorageProperties;
     }
-
+/*
     @PersistenceContext
-    private EntityManager entityManager;
-
-    /*public List<?> getFiles(String token) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Object principal = authentication.getPrincipal();
-        String login = principal.toString();
-        List<String> files = storageRepository.findFiles(login);
-        return files;
-    }*/
+    private EntityManager entityManager;*/
 
     public List<EntityFile> getAllFiles(Integer limit) {
         String login = authService.getUser().getLogin();
         User user = userRepository.findByLogin(login).orElseThrow(()->{throw new RuntimeException("User not found");});
         //PageRequest pageRequest = PageRequest.of(0,limit);
         System.out.println(storageRepository.findEntityFilesByUser(user/*, PageRequest.of(0,limit))*/));
-
         return storageRepository.findEntityFilesByUser(user/*, PageRequest.of(0,limit)*/);
     }
-
-    /*public ResponseEntity getFileInfo(String hash, MultipartFile multipartFile) {
-        if (checkHex(hash, multipartFile)) {
-            try (InputStream is = multipartFile.getInputStream()) {
-                int data;
-                while ((data = is.read()) != -1) {
-                    System.out.print(data + " ");
-                }
-                return ResponseEntity.ok("added");
-                        *//*"Hash:" + hash + ", Filename: " + multipartFile.getOriginalFilename()
-                        + ", Name: " + multipartFile.getName() + ", InputStream: " + multipartFile.getInputStream() + " bytes: " + multipartFile.getBytes();
-*//*
-            } catch (IOException ex) {
-                ex.getMessage();
-            }
-        }
-        return null;
-
-    }*/
 
     public String getHexFromFile(String fileName){
         User user = authService.getUser();
@@ -120,13 +92,8 @@ public class StorageService {
         Path file = Paths.get(rootPath.getUploadDir(), authService.getUser().getLogin(), filename);
         try {
             Resource resource = new UrlResource(file.toUri());
-            //InputStream fileInputStream = new FileInputStream(String.valueOf(file));
-            /*Map<String, Resource> response = new HashMap<>();*/
             if (resource.exists() || resource.isReadable()) {
                 InputStream inputStream = resource.getInputStream();
-                //String md5Hex = DigestUtils.md5DigestAsHex(inputStream);
-                /*response.put("hash", md5Hex);
-                response.put("file", file.getFileName().toString());*/
                 inputStream.close();
                 return resource;
             } else {

@@ -1,6 +1,7 @@
 package ru.minikhanov.cloud_storage.repository.security;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import ru.minikhanov.cloud_storage.models.security.ERole;
 import ru.minikhanov.cloud_storage.models.security.Role;
 

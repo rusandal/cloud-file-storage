@@ -23,6 +23,7 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import ru.minikhanov.cloud_storage.CloudStorageApplication;
+import ru.minikhanov.cloud_storage.Utils.Initializer;
 import ru.minikhanov.cloud_storage.Utils.MockUserUtils;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
 import ru.minikhanov.cloud_storage.models.EntityFile;
@@ -51,26 +52,15 @@ import java.time.LocalDate;
 import java.util.*;
 
 @SpringBootTest
-@ContextConfiguration(initializers = {StorageServiceTests.Initializer.class})
+@ContextConfiguration(initializers = {Initializer.class})
 @Testcontainers
 @Transactional
 public class StorageServiceTests {
     @Container
-    private static MySQLContainer<?> mySQLContainer = new MySQLContainer<>("mysql:8")
+    public static MySQLContainer<?> mySQLContainer = new MySQLContainer<>("mysql:8")
             .withDatabaseName("mydb")
             .withUsername("user")
             .withPassword("pass");
-
-    static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-            TestPropertyValues.of(
-                    "spring.datasource.url=jdbc:mysql://localhost:"+ mySQLContainer.getFirstMappedPort()+"/mydb?createDatabaseIfNotExist=true",
-                    "spring.datasource.username=" + mySQLContainer.getUsername(),
-                    "spring.datasource.password=" + mySQLContainer.getPassword()
-                    //"spring.datasource.url=jdbc:mysql://localhost:3306/testdb?createDatabaseIfNotExist=true"
-            ).applyTo(configurableApplicationContext.getEnvironment());
-        }
-    }
 
     @Autowired
     private StorageService storageService;
@@ -84,42 +74,40 @@ public class StorageServiceTests {
     private AuthService authServiceMock;
     @MockBean
     private FileStorageProperties rootPathMock;
-    @Autowired
-    private static MockUserUtils mockUserUtils;
     private static List<EntityFile> entityFileList = new ArrayList<>();
     private static User user = new User();
-    private static UserDetailsImpl userDetails;
-    private static Authentication authentication;
     private static final String ROOT_PATH = "storage_test";
 
 
     @BeforeAll
     public static void createData() {
-
-        //user=mockUserUtils.addTestUser("testUser", "testPassword");
         EntityFile entityFile1 = EntityFile.builder().fileName("testFileName1.txt").fileSize(1L).hash("1").uploadDate(LocalDate.now()).build();
         EntityFile entityFile2 = EntityFile.builder().fileName("testFileName2.txt").fileSize(2L).hash("2").uploadDate(LocalDate.now()).build();
         EntityFile entityFile3 = EntityFile.builder().fileName("testFileName3.txt").fileSize(3L).hash("3").uploadDate(LocalDate.now()).build();
         entityFileList.add(entityFile1);
         entityFileList.add(entityFile2);
         entityFileList.add(entityFile3);
-        userDetails = UserDetailsImpl.build(user);
-        //LoginRequest loginRequest = new LoginRequest(user.getLogin(), user.getPassword());
-        authentication = new UsernamePasswordAuthenticationToken(userDetails, null);
+        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @BeforeEach
-    public void createUser(){
+    public void createUser() {
         String login = "testUser";
         String password = "testPassword";
         Role role = roleRepository.save(new Role(ERole.ROLE_TEST));
-        User newUser=User.builder().login(login).password(password).enabled(false).build();
+        User newUser = User.builder().login(login).password(password).enabled(false).build();
         Set<Role> roles = new HashSet<>();
         roles.add(role);
         newUser.setRole(roles);
-        //user= userRepository.save(user);
         user = userRepository.save(newUser);
+    }
+
+    @AfterEach
+    public void delDir() throws IOException {
+        Path pathDir = Path.of(ROOT_PATH, user.getLogin());
+        FileUtils.deleteQuietly(pathDir.toFile());
     }
 
     @Test
@@ -133,22 +121,6 @@ public class StorageServiceTests {
         //Assertions.assertEquals(3, storageService.fi.size());
         Assertions.assertEquals(3, storageService.getAllFiles(3).size());
     }
-
-    //@Test
-    /*@DisplayName("Check file hex")
-    public void checkHexTest() {
-        MockMultipartFile multipartFile = new MockMultipartFile("file", "test.txt", "text/plane", "Spring Framework".getBytes());
-        String md5Hex;
-        String badmd5Hex = "a";
-        try {
-            md5Hex = DigestUtils.md5DigestAsHex(new BufferedInputStream(multipartFile.getInputStream()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        Throwable throwable = Assertions.assertThrows(StorageException.class, ()->{storageService.checkHex(badmd5Hex, multipartFile);});
-        Assertions.assertTrue(storageService.checkHex(md5Hex, multipartFile));
-        Assertions.assertNotNull(throwable);
-    }*/
 
     @Test
     @DisplayName("Get file by name")
@@ -168,17 +140,17 @@ public class StorageServiceTests {
             Assertions.assertTrue(resource.isFile());
             Assertions.assertEquals("myTestFile.tmp", resource.getFilename());
             Files.deleteIfExists(pathFile);
-            Assertions.assertThrows(StorageException.class, ()->{storageService.getFileByName("myTestFile.tmp");});
+            Assertions.assertThrows(StorageException.class, () -> {
+                storageService.getFileByName("myTestFile.tmp");
+            });
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } /*finally {
-            FileUtils.deleteQuietly(pathDir.toFile());
-        }*/
+        }
     }
 
     @Test
     @DisplayName("delete file from DB and storage")
-    public void deleteFileTest(){
+    public void deleteFileTest() throws IOException {
         String deleteFile = "testFileName1.txt";
         for (EntityFile file : entityFileList) {
             file.setUser(user);
@@ -188,12 +160,10 @@ public class StorageServiceTests {
         Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
         Path dir;
         Path file;
-        try {
-            dir = Files.createDirectories(Path.of(ROOT_PATH, user.getLogin()));
-            file = Files.createFile(Paths.get(ROOT_PATH, user.getLogin(), deleteFile));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
+        dir = Files.createDirectories(Path.of(ROOT_PATH, user.getLogin()));
+        file = Files.createFile(Paths.get(ROOT_PATH, user.getLogin(), deleteFile));
+
         storageService.deleteFile(deleteFile);
         FileUtils.deleteQuietly(dir.toFile());
         Assertions.assertFalse(storageRepository.findById(entityFileList.get(0).getId()).isPresent());
@@ -210,7 +180,9 @@ public class StorageServiceTests {
         Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
         Assertions.assertEquals(DigestUtils.md5DigestAsHex(Files.readAllBytes(file)), storageService.getHexFromFile("myTestFile.tmp"));
         Files.deleteIfExists(file);
-        Assertions.assertThrows(StorageException.class, ()->{storageService.getHexFromFile("myTestFile.tmp");});
+        Assertions.assertThrows(StorageException.class, () -> {
+            storageService.getHexFromFile("myTestFile.tmp");
+        });
     }
 
     @Test
@@ -229,8 +201,7 @@ public class StorageServiceTests {
         Path file = Files.createFile(Paths.get(ROOT_PATH, user.getLogin(), oldName));
         Files.write(file, "test test test".getBytes());
         storageService.renameFile(oldName, newName);
-        System.out.println(storageRepository.findAll());
-        Assertions.assertEquals(newName, file.getFileName().toString());
+        Assertions.assertTrue(Files.exists(Path.of(ROOT_PATH, user.getLogin(), newName)));
         System.out.println(storageRepository.findAll());
         Assertions.assertEquals(newName, storageRepository.getById(filesFromDb.get(1).getId()).getFileName());
         Files.deleteIfExists(file);

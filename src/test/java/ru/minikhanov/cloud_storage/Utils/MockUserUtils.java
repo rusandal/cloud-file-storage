@@ -13,18 +13,7 @@ import java.util.Set;
 
 @Component
 public class MockUserUtils {
-    @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
-    private UserRepository userRepository;
-    public User addTestUser(String login, String password){
-        Role role = roleRepository.save(new Role(ERole.ROLE_TEST));
-        User user=User.builder().login(login).password(password).enabled(true).build();
-        Set<Role> roles = new HashSet<>();
-        roles.add(role);
-        user.setRole(roles);
-        return userRepository.save(user);
-    }
+
     public static User getMockUser(String username) {
         User user=User.builder().login(username).password("testPassword").enabled(false).build();
         Role role = new Role(ERole.ROLE_TEST);

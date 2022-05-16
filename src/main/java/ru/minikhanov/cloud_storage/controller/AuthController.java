@@ -22,7 +22,7 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponse(token));
     }
 
-    @GetMapping("/login?logout")
+    @PostMapping("/logout")
     @ResponseStatus(code = HttpStatus.OK)
     public void logout(@RequestHeader("auth-token") String token){
         System.out.println("post logout");
