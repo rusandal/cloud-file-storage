@@ -1,34 +1,24 @@
 package ru.minikhanov.cloud_storage.controllerTests;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Primary;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import ru.minikhanov.cloud_storage.Utils.Initializer;
-import ru.minikhanov.cloud_storage.Utils.MockUserUtils;
 import ru.minikhanov.cloud_storage.models.EntityFile;
 import ru.minikhanov.cloud_storage.models.FileStorageProperties;
-import ru.minikhanov.cloud_storage.models.LoginRequest;
 import ru.minikhanov.cloud_storage.models.security.ERole;
 import ru.minikhanov.cloud_storage.models.security.Role;
 import ru.minikhanov.cloud_storage.models.security.User;
@@ -38,11 +28,8 @@ import ru.minikhanov.cloud_storage.repository.security.UserRepository;
 import ru.minikhanov.cloud_storage.security.jwt.JwtUtils;
 import ru.minikhanov.cloud_storage.security.services.UserDetailsImpl;
 import ru.minikhanov.cloud_storage.service.AuthService;
-import ru.minikhanov.cloud_storage.service.StorageService;
 
 import javax.transaction.Transactional;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,7 +40,8 @@ import java.util.List;
 import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -88,7 +76,7 @@ public class ControllerTest {
     @BeforeEach
     public void createData() throws IOException {
         Role role = roleRepository.save(new Role(ERole.ROLE_TEST));
-        User newUser=User.builder().login("testUser").password("testPassword").enabled(true).build();
+        User newUser = User.builder().login("testUser").password("testPassword").enabled(true).build();
         Set<Role> roles = new HashSet<>();
         roles.add(role);
         newUser.setRole(roles);
@@ -119,12 +107,13 @@ public class ControllerTest {
     @Test
     public void addFile() throws Exception {
         Mockito.when(authServiceMock.getUser()).thenReturn(user);
+        Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
         String token = jwtUtils.generateJwtToken(authentication);
         MockMultipartFile myFile = new MockMultipartFile("file", "test.txt", "text/plane", "Spring Framework".getBytes());
         mockMvc.perform(MockMvcRequestBuilders.multipart("/file")
-                        .file(myFile)
-                        .param("filename", myFile.getOriginalFilename())
-                        .header("auth-token", "Bearer "+token)
+                                .file(myFile)
+                                .param("filename", myFile.getOriginalFilename())
+                                .header("auth-token", "Bearer " + token)
                         //.contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk());
@@ -142,7 +131,7 @@ public class ControllerTest {
         Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
         mockMvc.perform(delete("/file")
                         .param("filename", entityFileList.get(0).getFileName())
-                        .header("auth-token", "Bearer "+token)
+                        .header("auth-token", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk());
@@ -161,8 +150,8 @@ public class ControllerTest {
         Mockito.when(authServiceMock.getUser()).thenReturn(user);
         Mockito.when(rootPathMock.getUploadDir()).thenReturn(ROOT_PATH);
         mockMvc.perform(get("/file")
-                        .param("filename", entityFileList.get(0).getFileName())
-                        .header("auth-token", "Bearer "+token)
+                                .param("filename", entityFileList.get(0).getFileName())
+                                .header("auth-token", "Bearer " + token)
                         //.contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk())
@@ -172,7 +161,6 @@ public class ControllerTest {
     @Test
     @DisplayName("Get files")
     public void getFilesTest() throws Exception {
-        //Mockito.when(storageServiceMock.getAllFiles(3)).thenReturn(entityFileList);
         for (EntityFile file : entityFileList) {
             file.setUser(user);
         }
@@ -181,7 +169,7 @@ public class ControllerTest {
         Mockito.when(authServiceMock.getUser()).thenReturn(user);
         mockMvc.perform(get("/list")
                         .param("limit", "3")
-                        .header("auth-token", "Bearer "+token)
+                        .header("auth-token", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk());
@@ -202,10 +190,9 @@ public class ControllerTest {
         mockMvc.perform(put("/file")
                         .param("filename", entityFileList.get(0).getFileName())
                         .content("{\"filename\": \"renamed_file.txt\"}")
-                        .header("auth-token", "Bearer "+token)
+                        .header("auth-token", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk());
     }
-
 }

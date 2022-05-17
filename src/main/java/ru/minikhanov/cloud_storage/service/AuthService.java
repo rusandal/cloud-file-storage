@@ -1,16 +1,13 @@
 package ru.minikhanov.cloud_storage.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.minikhanov.cloud_storage.models.security.ERole;
-import ru.minikhanov.cloud_storage.models.security.JwtResponse;
 import ru.minikhanov.cloud_storage.models.security.Role;
 import ru.minikhanov.cloud_storage.models.security.User;
 import ru.minikhanov.cloud_storage.repository.security.RoleRepository;
@@ -28,6 +25,7 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder encoder;
     private final JwtUtils jwtUtils;
+
     @Autowired
     public AuthService(AuthenticationManager authenticationManager, UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder encoder, JwtUtils jwtUtils) {
         this.authenticationManager = authenticationManager;
@@ -37,15 +35,14 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
     }
 
-    public String getToken (String login, String password){
+    public String getToken(String login, String password) {
 
-        if(userRepository.existsByLogin(login)){
+        if (userRepository.existsByLogin(login)) {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(login, password));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtUtils.generateJwtToken(authentication);
             return jwt;
-            //return ResponseEntity.ok(new JwtResponse(jwt));
         } else {
             Set<Role> roles = new HashSet<>();
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
@@ -57,11 +54,10 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(login, password));
             String jwt = jwtUtils.generateJwtToken(authentication);
             return jwt;
-            //return ResponseEntity.ok(new JwtResponse(jwt));
         }
     }
 
-    public void deleteToken (String token){
+    public void deleteToken(String token) {
         jwtUtils.deactivateToken(token);
     }
 
@@ -71,8 +67,10 @@ public class AuthService {
         return userDetails;
     }
 
-    public User getUser (){
+    public User getUser() {
         String username = getUserAuthDetails().getUsername();
-        return userRepository.findByLogin(username).orElseThrow(()->{throw new RuntimeException("User not found");});
+        return userRepository.findByLogin(username).orElseThrow(() -> {
+            throw new RuntimeException("User not found");
+        });
     }
 }

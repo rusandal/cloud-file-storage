@@ -32,14 +32,14 @@ public class JpaEntityFileTests {
     private static EntityFile fileInfo;
 
     @BeforeAll
-    public static void createUser(){
-        user=User.builder().login("testUser").password("testPassword").enabled(false).build();
-        fileInfo=EntityFile.builder().fileName("testfile").fileSize(1L).hash("123").uploadDate(LocalDate.now()).build();
+    public static void createUser() {
+        user = User.builder().login("testUser").password("testPassword").enabled(false).build();
+        fileInfo = EntityFile.builder().fileName("testfile").fileSize(1L).hash("123").uploadDate(LocalDate.now()).build();
     }
 
     @Test
     @DisplayName("Create file in DB")
-    public void addFileInDB(){
+    public void addFileInDB() {
         Set<Role> roles = new HashSet<>();
         Role role = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
