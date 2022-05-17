@@ -11,10 +11,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.util.DigestUtils;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+//import ru.minikhanov.cloud_storage.Utils.Initializer;
 import ru.minikhanov.cloud_storage.Utils.Initializer;
 import ru.minikhanov.cloud_storage.exceptions.StorageException;
 import ru.minikhanov.cloud_storage.models.EntityFile;
@@ -69,6 +72,12 @@ public class StorageServiceTests {
     private static final String ROOT_PATH = "storage_test";
 
 
+    @DynamicPropertySource
+    static void mySQLContainerProperties(DynamicPropertyRegistry registry){
+        registry.add("spring.datasource.url", mySQLContainer::getJdbcUrl);
+        registry.add("spring.datasource.password", mySQLContainer::getPassword);
+        registry.add("spring.datasource.username", mySQLContainer::getUsername);
+    }
     @BeforeAll
     public static void createData() {
         EntityFile entityFile1 = EntityFile.builder().fileName("testFileName1.txt").fileSize(1L).hash("1").uploadDate(LocalDate.now()).build();
@@ -98,6 +107,10 @@ public class StorageServiceTests {
     public void delDir() throws IOException {
         Path pathDir = Path.of(ROOT_PATH, user.getLogin());
         FileUtils.deleteQuietly(pathDir.toFile());
+    }
+    @AfterAll
+    public static void stopContainer(){
+        mySQLContainer.stop();
     }
 
     @Test
