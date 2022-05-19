@@ -1,4 +1,6 @@
-storage/
+/storage*
+application.log*
+badtoken.txt
 HELP.md
 README.md
 target/
