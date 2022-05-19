@@ -4,12 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Cascade;
 import ru.minikhanov.cloud_storage.models.security.User;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
 
 @Entity
@@ -18,7 +16,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Table(name = "storage_info",
-        uniqueConstraints = { @UniqueConstraint(name = "FileNameAndIdUser", columnNames = { "fileName", "user_id" } ) })
+        uniqueConstraints = {@UniqueConstraint(name = "FileNameAndIdUser", columnNames = {"fileName", "user_id"})})
 public class EntityFile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +27,5 @@ public class EntityFile {
     private Long fileSize;
     private LocalDate uploadDate;
     @ManyToOne(fetch = FetchType.LAZY)
-    //@JoinColumn(name = "storage_users")
     private User user;
 }

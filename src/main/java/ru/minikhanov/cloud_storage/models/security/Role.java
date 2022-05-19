@@ -1,7 +1,8 @@
 package ru.minikhanov.cloud_storage.models.security;
 
-import lombok.*;
-import ru.minikhanov.cloud_storage.models.security.ERole;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 
@@ -16,8 +17,10 @@ public class Role {
     private Integer id;
     @Enumerated(EnumType.STRING)
     private ERole name;
+
     public Role() {
     }
+
     public Role(ERole name) {
         this.name = name;
     }

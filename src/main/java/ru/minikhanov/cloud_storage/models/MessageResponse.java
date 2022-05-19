@@ -11,9 +11,11 @@ public class MessageResponse {
     public void setMessage(String message) {
         this.message = message;
     }
+
     public Integer getId() {
         return this.id;
     }
+
     public String getMessage() {
         return this.message;
     }

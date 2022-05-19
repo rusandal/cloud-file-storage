@@ -20,6 +20,7 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
+
     public UserDetailsImpl(Long id, String login, Boolean enabled, String password,
                            Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
@@ -28,6 +29,7 @@ public class UserDetailsImpl implements UserDetails {
         this.password = password;
         this.authorities = authorities;
     }
+
     public static UserDetailsImpl build(User user) {
         List<GrantedAuthority> authorities = user.getRole().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName().name()))
@@ -39,6 +41,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getPassword(),
                 authorities);
     }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
@@ -77,6 +80,7 @@ public class UserDetailsImpl implements UserDetails {
     public boolean isEnabled() {
         return enabled;
     }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)

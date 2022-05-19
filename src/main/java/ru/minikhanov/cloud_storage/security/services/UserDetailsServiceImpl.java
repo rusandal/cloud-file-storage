@@ -1,6 +1,5 @@
 package ru.minikhanov.cloud_storage.security.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,7 +21,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
         User user = userRepository.findByLogin(login)
-                .orElseThrow(()-> new UsernameNotFoundException("User not found: "+login));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + login));
         return UserDetailsImpl.build(user);
     }
 }

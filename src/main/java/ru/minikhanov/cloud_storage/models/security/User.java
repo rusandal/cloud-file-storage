@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.minikhanov.cloud_storage.models.EntityFile;
-import ru.minikhanov.cloud_storage.models.security.Role;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
@@ -19,9 +17,9 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @Table(name = "storage_users",
-        uniqueConstraints ={
-            @UniqueConstraint(columnNames = "login")
-})
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = "login")
+        })
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
