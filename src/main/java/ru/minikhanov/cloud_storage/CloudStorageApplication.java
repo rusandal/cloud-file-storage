@@ -7,6 +7,9 @@ import ru.minikhanov.cloud_storage.models.FileStorageProperties;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Scanner;
 
@@ -17,8 +20,13 @@ import java.util.Scanner;
 public class CloudStorageApplication {
     public static HashSet<String> hashSetBadToken = new HashSet<>();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         SpringApplication.run(CloudStorageApplication.class, args);
+
+        Path badtoken = Path.of("badtoken.txt");
+        if(!Files.exists(badtoken)){
+            Files.createFile(badtoken);
+        }
 
         try (Scanner sc = new Scanner(new File("badtoken.txt"))) {
             while (sc.hasNextLine()) {
