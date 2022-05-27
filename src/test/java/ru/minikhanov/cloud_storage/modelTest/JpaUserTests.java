@@ -15,9 +15,6 @@ import ru.minikhanov.cloud_storage.repository.security.UserRepository;
 
 import javax.transaction.Transactional;
 import java.util.Set;
-
-/*@DataJpaTest
-@AutoConfigureTestDatabase(replace=AutoConfigureTestDatabase.Replace.NONE)*/
 @Transactional
 @SpringBootTest
 public class JpaUserTests {

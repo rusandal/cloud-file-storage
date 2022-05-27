@@ -1,5 +1,5 @@
 # Облачное хранилище файлов
-Java11, Spring Boot, Spring Security, Spring Data JPA, Hibernate, Liquibase, Docker, Maven
+Java11, Spring Boot, Spring Security, Spring Data JPA, Hibernate, JUnit, Mockito, TestContainers, Liquibase, Docker, Maven
 ## Описание
 Данное приложение (REST - сервис) представляет REST интерфейс для загрузки, хранения, переименования и удаления файлов.
 Все запросы к сервису проходят проверку авторизации и аутентификации пользователей. В качестве источника данных (пользователь, файл), а так интерфейса пользователя для отображения и взаимодействия (добавление, изменение, удаление), использовался [web проект](https://github.com/netology-code/jd-homeworks/tree/master/diploma/netology-diplom-frontend) разработанный на NodeJS.
